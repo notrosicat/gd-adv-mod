@@ -1,0 +1,629 @@
+#include <tonc.h>
+#include "main.h"
+#include "memory.h"
+#include "metatiles.h"
+#include "physics_defines.h"
+#include <maxmod.h>
+#include "soundbank.bin.h"
+#include "soundbank.h"
+#include "level_select.h"
+#include "title_screen.h"
+#include "sound_test.h"
+#include "icon_kit.h"
+#include "math.h"
+#include "tonc_tte.h"
+#include "pusab.h"
+#include "posprintf.h"
+#include "metaspr.h"
+#include "sprite_loading.h"
+
+void game_loop();
+void hblank_lvl_select_handler();
+
+#define CHEAT_MENU_ITEMS 3
+#define CHEAT_MENU_X 5
+#define CHEAT_MENU_Y 5
+
+static void cheat_menu_restore_level(void) {
+    // Restore the level graphics that the temporary text screen replaced.
+    memcpy32(&tile_mem[0][0], blockset, sizeof(blockset) / 4);
+    set_background(((u32*) level_defines[loaded_level_id][LEVEL_PROPERTIES_INDEX])[LEVEL_BACKGROUND_TYPE]);
+    load_camera_screen();
+    REG_BG0CNT  = BG_CBB(0) | BG_SBB(27) | BG_REG_32x32 | BG_PRIO(1);
+    REG_BG1CNT  = BG_CBB(0) | BG_SBB(28) | BG_REG_32x32 | BG_PRIO(2);
+    REG_BG2CNT  = BG_CBB(2) | BG_SBB(29) | BG_REG_32x32 | BG_PRIO(3);
+    REG_BG3CNT  = BG_CBB(2) | BG_SBB(30) | BG_REG_32x64 | BG_PRIO(0);
+    REG_DISPCNT = DCNT_OBJ | DCNT_OBJ_1D | DCNT_MODE0 | DCNT_BG0 | DCNT_BG1 | DCNT_BG2 | DCNT_BG3 | DCNT_WIN0;
+    REG_WININ = WIN_BG0 | WIN_BG1 | WIN_BG2 | WIN_BG3 | WIN_BLD | WIN_OBJ;
+    REG_WINOUT = WIN_BG2;
+    REG_WIN0H = SCREEN_WIDTH;
+    REG_WIN0V = SCREEN_HEIGHT;
+    memcpy32(pal_bg_mem, palette_buffer, 256);
+}
+
+static void cheat_menu_draw(u32 selected) {
+    char line[32];
+    tte_erase_rect(0, 0, 240, 160);
+    tte_set_pos(CHEAT_MENU_X << 3, CHEAT_MENU_Y << 3);
+    tte_write("GD ADV MOD MENU");
+
+    tte_set_pos(CHEAT_MENU_X << 3, 7 << 3);
+    tte_write(selected == 0 ? "> NOCLIP" : "  NOCLIP");
+    tte_set_pos(19 << 3, 7 << 3);
+    tte_write(noclip ? "ON" : "OFF");
+
+    tte_set_pos(CHEAT_MENU_X << 3, 9 << 3);
+    tte_write(selected == 1 ? "> HITBOXES" : "  HITBOXES");
+    tte_set_pos(19 << 3, 9 << 3);
+    tte_write(hitbox_display ? "ON" : "OFF");
+
+    tte_set_pos(CHEAT_MENU_X << 3, 11 << 3);
+    tte_write(selected == 2 ? "> SPEED" : "  SPEED");
+    tte_set_pos(19 << 3, 11 << 3);
+    static const char *speed_labels[] = { "0.5x", "1x", "2x", "3x", "4x" };
+    posprintf(line, "%s", speed_labels[speed_id < SPEED_COUNT ? speed_id : SPEED_X1]);
+    tte_write(line);
+
+    tte_set_pos(CHEAT_MENU_X << 3, 16 << 3);
+    tte_write("A SELECT   B CLOSE");
+}
+
+static void cheat_menu(void) {
+    u32 selected = 0;
+    u16 old_bg2cnt = REG_BG2CNT;
+    u16 old_bg2hofs = REG_BG2HOFS;
+    u16 old_bg2vofs = REG_BG2VOFS;
+    u16 old_dispcnt = REG_DISPCNT;
+    u16 old_winin = REG_WININ;
+    u16 old_winout = REG_WINOUT;
+    u16 old_win0h = REG_WIN0H;
+    u16 old_win0v = REG_WIN0V;
+    COLOR old_ink = palette_buffer[15];
+
+    mmPause();
+    REG_DISPCNT = DCNT_MODE0 | DCNT_BG2;
+    REG_BG2CNT = BG_CBB(0) | BG_SBB(29) | BG_REG_32x32 | BG_PRIO(0);
+    REG_BG2HOFS = 0;
+    REG_BG2VOFS = 0;
+    memset16(&se_mem[29][0], 0, sizeof(SCREENBLOCK) / sizeof(u16));
+
+    // Use a known-visible palette entry for the menu text.
+    palette_buffer[15] = CLR_WHITE;
+    memcpy32(pal_bg_mem, palette_buffer, 256);
+
+    tte_init_se(
+        2,
+        BG_CBB(0) | BG_SBB(29) | BG_REG_32x32 | BG_PRIO(0),
+        0, 15, 0, &pusabFont, NULL);
+    tte_set_special(0x2000);
+
+    while (1) {
+        key_poll();
+
+        if (key_hit(KEY_B)) break;
+        if (key_hit(KEY_UP)) {
+            if (selected == 0) selected = CHEAT_MENU_ITEMS - 1;
+            else selected--;
+        }
+        if (key_hit(KEY_DOWN)) selected = (selected + 1) % CHEAT_MENU_ITEMS;
+
+        if (key_hit(KEY_A)) {
+            if (selected == 0) noclip ^= 1;
+            else if (selected == 1) hitbox_display ^= 1;
+            else {
+                speed_id++;
+                if (speed_id >= SPEED_COUNT) speed_id = SPEED_X05;
+                set_player_speed();
+            }
+        }
+
+        cheat_menu_draw(selected);
+        VBlankIntrWait();
+    }
+
+    palette_buffer[15] = old_ink;
+    REG_BG2CNT = old_bg2cnt;
+    REG_BG2HOFS = old_bg2hofs;
+    REG_BG2VOFS = old_bg2vofs;
+    REG_DISPCNT = old_dispcnt;
+    REG_WININ = old_winin;
+    REG_WINOUT = old_winout;
+    REG_WIN0H = old_win0h;
+    REG_WIN0V = old_win0v;
+    cheat_menu_restore_level();
+    mmResume();
+}
+
+
+void vblank_handler() {
+    mmVBlank();
+
+    // Only use the update handler on a level
+    if (game_state == STATE_PLAYING && frame_finished) {
+        frame_finished = FALSE;
+        if (!player_death) mirror_transition();
+
+        if (swap_queue) swap_screen_dir();
+
+        load_chr_in_buffer();
+        unload_chr_in_buffer();
+
+        if (update_flags & UPDATE_OAM) {
+            // Copy OAM buffer into OAM
+            obj_copy(oam_mem, shadow_oam, 128);
+            obj_aff_copy(obj_aff_mem, obj_aff_buffer, 32);
+        }
+
+        if (update_flags & UPDATE_SCROLL) {        
+            // If screen is mirrored, flip screen position so it goes left instead of right
+            update_scroll();
+            // Run scroll routines
+            screen_scroll_load();
+        }
+        
+        if (update_flags & REFRESH_SCREEN) {
+            load_camera_screen();
+            update_flags &= ~REFRESH_SCREEN;
+        }
+
+        if (update_flags & UPDATE_VRAM) {
+            // Run color stuff
+            run_col_trigger_changes();
+            
+            // Handle fading blocks
+            handle_fading_blocks();
+            
+            // Update animated sprites
+            run_animated_sprites();
+
+            // Copy palette from buffer
+            memcpy32(pal_bg_mem, palette_buffer, 256);
+
+            handle_gamemode_uploads();
+        }
+
+        if (update_flags & CLEAR_OAM_BUFFER) {
+            // Clear OAM
+            memset32(shadow_oam, ATTR0_HIDE, nextSpr << 1);
+            // Clear rotation buffer
+            memset16(rotation_buffer, 0x0000, NUM_ROT_SLOTS);
+            memset16(rotation_flags_buffer, 0x0000, NUM_ROT_SLOTS);
+        }
+    }
+
+    if (game_state == STATE_PLAYING) {
+        if (in_practice_mode) {
+            if (key_hit(KEY_R)) {
+                delete_last_checkpoint();
+            }
+        }
+    }
+
+    // Increment global timer
+    global_timer++;
+
+    // Advance rng seed
+    qran();
+
+    // Run sound
+    mmFrame();
+}
+
+IWRAM_CODE void hang() {
+    // Hang so SRAM doesn't get corrupted
+    while (TRUE) {
+        ;;
+    }
+}
+
+void init_maxmod() {
+    u8* myData;
+    mm_gba_system mySystem;
+ 
+    // Allocate data for channel buffers & wave buffer (malloc'd data goes to EWRAM)
+    // Use the SIZEOF definitions to calculate how many bytes to reserve
+    myData = music_data;
+    
+    // Setup system info
+    // 16KHz software mixing rate, select from mm_mixmode
+    mySystem.mixing_mode       = MM_MIX_16KHZ;
+
+    // Number of module/mixing channels
+    // Higher numbers offer better polyphony at the expense
+    // of more memory and/or CPU usage
+    mySystem.mod_channel_count = NUM_CHANNELS;
+    mySystem.mix_channel_count = NUM_CHANNELS;
+    
+    // Assign memory blocks to pointers
+    mySystem.module_channels   = (mm_addr)(myData+0);
+    mySystem.active_channels   = (mm_addr)(myData+(NUM_CHANNELS*MM_SIZEOF_MODCH));
+    mySystem.mixing_channels   = (mm_addr)(myData+(NUM_CHANNELS*(MM_SIZEOF_MODCH
+	                                             +MM_SIZEOF_ACTCH)));
+    mySystem.mixing_memory     = (mm_addr)mixing_buffer;
+    mySystem.wave_memory       = (mm_addr)(myData+(NUM_CHANNELS*(MM_SIZEOF_MODCH
+                                                     +MM_SIZEOF_ACTCH
+                                                     +MM_SIZEOF_MIXCH)));
+    // Pass soundbank address
+    mySystem.soundbank         = (mm_addr)soundbank_bin;
+
+    mmInit( &mySystem );
+    // 85% volume
+    mmSetModuleVolume(819);
+    irq_init(NULL);
+    irq_set(II_VBLANK, vblank_handler, 0);
+    irq_set(II_HBLANK, hblank_lvl_select_handler, 0);
+    irq_set(II_GAMEPAK, hang, 0);
+    irq_enable(II_VBLANK);
+    irq_disable(II_HBLANK);
+    
+}
+
+#define MEM_CHECK_MAGIC 14021968
+#define MEM_CHECK_SIZE  16
+
+const u32 ROM_MAGIC[MEM_CHECK_SIZE] = {
+    MEM_CHECK_MAGIC + 0,
+    MEM_CHECK_MAGIC + 1,
+    MEM_CHECK_MAGIC + 2,
+    MEM_CHECK_MAGIC + 3,
+    MEM_CHECK_MAGIC + 4,
+    MEM_CHECK_MAGIC + 5,
+    MEM_CHECK_MAGIC + 6,
+    MEM_CHECK_MAGIC + 7,
+    MEM_CHECK_MAGIC + 8,
+    MEM_CHECK_MAGIC + 9,
+    MEM_CHECK_MAGIC + 10,
+    MEM_CHECK_MAGIC + 11,
+    MEM_CHECK_MAGIC + 12,
+    MEM_CHECK_MAGIC + 13,
+    MEM_CHECK_MAGIC + 14,
+    MEM_CHECK_MAGIC + 15,
+};
+
+EWRAM_CODE u32 check_rom_waitstate(u32 mask) {
+    REG_WSCNT = mask;
+
+    // check sequential read (S)
+    for (s32 i = 0; i < MEM_CHECK_SIZE; i++) {
+        if (*(vs32*)&ROM_MAGIC[i] != (MEM_CHECK_MAGIC + i)) {
+            // Read failed, reset to default values
+            REG_WSCNT = WS_ROM0_N4 | WS_ROM0_S2 | WS_PREFETCH;
+            return FALSE;
+        }
+    }
+
+    // check non-sequential read (N)
+    for (s32 i = 0, j = MEM_CHECK_SIZE - 1; i < MEM_CHECK_SIZE; i++, j--) {
+        u8 L = *(vs32*)&ROM_MAGIC[i] == (MEM_CHECK_MAGIC + i);
+        u8 R = *(vs32*)&ROM_MAGIC[j] == (MEM_CHECK_MAGIC + j);
+
+        // If the values are the same, then continue checking
+        if (L && R) continue;
+
+        // Read failed, reset to default values
+        REG_WSCNT = WS_ROM0_N4 | WS_ROM0_S2 | WS_PREFETCH;
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+const u32 WSCNT_MASK[] = {
+    WS_ROM0_N2 | WS_ROM0_S1 | WS_PREFETCH | WS_SRAM_8,
+    WS_ROM0_N3 | WS_ROM0_S1 | WS_PREFETCH | WS_SRAM_8,
+    WS_ROM0_N3 | WS_ROM0_S2 | WS_PREFETCH | WS_SRAM_8,
+    WS_ROM0_N4 | WS_ROM0_S1 | WS_PREFETCH | WS_SRAM_8,
+};
+
+void rom_waitstates() {
+    for (u32 i = 0; i < (sizeof(WSCNT_MASK) / sizeof(u32)); i++)
+    {
+        if (check_rom_waitstate(WSCNT_MASK[i])) {
+            break;
+        }
+    }
+}
+void main_loop();
+
+void init_variables() {
+    gamemode_upload_buffer[ID_PLAYER_1] = -1;
+    gamemode_upload_buffer[ID_PLAYER_2] = -1;
+}
+
+int __attribute__((target("arm"))) main() {
+    __asm__(
+        "STMDB SP!, {R4-R6, LR}"
+    );
+    
+    init_maxmod();
+
+    rom_waitstates();
+
+    init_sram();
+
+    init_variables();
+
+    game_state = STATE_TITLE_SCREEN;
+    
+    mmStart(MOD_MENU, MM_PLAY_LOOP);
+
+    // Set blending registers
+    REG_BLDCNT = BLD_BUILD(BLD_OBJ, BLD_BG0 | BLD_BG1 | BLD_BG2, BLD_MODE(1));
+
+    // Set additive blending
+    REG_BLDALPHA = BLDA_BUILD(16, 16);
+
+    main_loop();
+
+    return 0;
+}
+
+void main_loop() {
+    while(1) {
+        switch (game_state) {
+            case STATE_TITLE_SCREEN:
+                title_screen_loop();
+                break;
+
+            case STATE_LEVEL_SELECT:
+                level_select_loop();
+                break;
+                
+            case STATE_ICON_KIT:
+                icon_kit_loop();
+                break;
+
+            case STATE_SOUND_TEST:
+                sound_test_loop();
+                break;
+        
+            case STATE_PLAYING:
+                game_loop();
+                break;
+        }
+    }
+}
+void level_loop();
+
+void game_loop() {
+    mirror_scaling = float2fx(1.0);
+
+    REG_BG0CNT  = BG_CBB(0) | BG_SBB(27) | BG_REG_32x32 | BG_PRIO(1);
+    REG_BG0HOFS = 0;
+    REG_BG0VOFS = 0;
+
+    REG_BG1CNT  = BG_CBB(0) | BG_SBB(28) | BG_REG_32x32 | BG_PRIO(2);
+    REG_BG1HOFS = 0;
+    REG_BG1VOFS = 0;
+
+    REG_BG2CNT  = BG_CBB(2) | BG_SBB(29) | BG_REG_32x32 | BG_PRIO(3);
+    REG_BG2HOFS = 0;
+    REG_BG2VOFS = 0;
+
+    REG_BG3CNT  = BG_CBB(2) | BG_SBB(30) | BG_REG_32x64 | BG_PRIO(0);
+    REG_BG3HOFS = 0;
+    REG_BG3VOFS = 256;
+
+    // Set window registers
+
+    REG_WININ = WIN_BG0 | WIN_BG1 | WIN_BG2 | WIN_BG3 | WIN_BLD | WIN_OBJ;
+    REG_WINOUT = WIN_BG2;
+
+    REG_WIN0H = SCREEN_WIDTH;
+    REG_WIN0V = SCREEN_HEIGHT;
+
+    // Init OAM and VRAM
+    oam_init(shadow_oam, 128);
+    memcpy32(&tile_mem[0][0], blockset, sizeof(blockset) / 4);
+
+    memcpy16(&palette_buffer[240], &menu_palette[16], 16);
+    
+    memcpy32(&tile_mem_obj[0][992], level_text_chr, sizeof(TILE) * 32 / 4);
+    memcpy32(&tile_mem_obj[0][928], &level_text_chr[32], sizeof(TILE) * 12 / 4);
+    memcpy16(&palette_buffer[256], spritePalette, sizeof(spritePalette) / sizeof(COLOR));
+
+    REG_DISPCNT = DCNT_OBJ | DCNT_OBJ_1D | DCNT_MODE0 | DCNT_BG0 | DCNT_BG1 | DCNT_BG2 | DCNT_BG3 | DCNT_WIN0;
+    
+    copy_pulsing_sprite();
+
+    load_level(loaded_level_id);
+    
+    attempt_count = 1;
+
+    frame_finished = TRUE;
+    fade_in_level();
+
+    level_loop();
+}
+
+void exit_level() {
+    mmStop();
+    mmEffect(SFX_LEVEL_EXIT);
+    game_state = STATE_LEVEL_SELECT;      
+    memcpy32(palette_buffer, pal_bg_mem, 256);
+    clear_checkpoints();
+    in_practice_mode = FALSE;
+    screen_mirrored = FALSE;
+
+    fade_out();
+
+    mmStart(MOD_MENU, MM_PLAY_LOOP);
+}
+
+void level_loop() {
+    while (1) { 
+        key_poll();
+        
+        // Reset next sprite index
+        nextSpr = 0;
+
+        // L+R opens the in-level cheat menu.
+#ifdef DEBUG
+        if (key_is_down(KEY_L | KEY_R) && (key_hit(KEY_L) || key_hit(KEY_R)) && !complete_cutscene) {
+            cheat_menu();
+            nextSpr = 0;
+        }
+#endif
+
+        // If pressed start, pause the game
+        if (key_hit(KEY_START) && !complete_cutscene) {
+            if (paused_routines()) {
+                exit_level();
+                return;
+            }
+        }
+
+        if (cutscene_frame == EXIT_CUTSCENE_FRAME) {
+            game_state = STATE_LEVEL_SELECT;      
+            memcpy32(palette_buffer, pal_bg_mem, 256);
+            fade_out();
+            mmStart(MOD_MENU, MM_PLAY_LOOP);
+            clear_checkpoints();
+            complete_cutscene = FALSE;        
+            cutscene_frame = 0;
+            screen_mirrored = FALSE;
+            screen_mirrored_transition = FALSE;
+            in_practice_mode = FALSE;
+            screen_mirrored = FALSE;
+            return;
+        }
+        
+#ifdef DEBUG
+        if (key_hit(KEY_RIGHT)) {
+            debug_mode ^= 1;
+            hitbox_display = 0;
+        }
+
+        if (key_hit(KEY_LEFT)) {
+            noclip ^= 1;
+        }
+
+        if (debug_mode) {
+            if (key_hit(KEY_DOWN)) {
+                hitbox_display ^= 1;
+            }
+            
+            draw_sprite_number(232, 120, player_profile, FIRST_NUMBER_ID, numberSpr, 0);
+            draw_sprite_number(232, 128, display_profile, FIRST_NUMBER_ID, numberSpr, 0);
+        }
+
+        if (noclip) oam_metaspr(0, 0, noclipSpr, 0, 0, 0, -1, 0, 0, TRUE, FALSE); 
+#endif
+
+        // Draw level progress
+#ifdef INCLUDE_ENDLESS
+        if (loaded_level_id != endless_ID) draw_percentage(108, 8, get_level_progress(), numberSpr, 0);
+        else draw_endless_distance(108, 8, get_level_progress(), numberSpr, 0);
+#else
+        draw_percentage(108, 8, get_level_progress(), numberSpr, 0);
+#endif
+        
+
+        if (player_death) {
+            mmEffect(SFX_EXPLOSION);
+            set_new_best(get_level_progress(), in_practice_mode);
+            reset_level();
+
+            // Player exitted the level
+            if (game_state == STATE_LEVEL_SELECT) return;
+        }
+
+        // Run player code
+        player_code();
+
+        // Run object routines
+        load_objects(TRUE, FALSE);
+        deoccupy_chr_slots();
+        display_objects();
+        rotate_saws();
+        scale_pulsing_objects();
+        draw_attempt_counter();
+        
+        // Run use effects first
+        run_use_effects();
+
+        if (in_practice_mode) {
+            if (key_hit(KEY_L)) {
+                store_practice_vars();
+            }
+
+            draw_checkpoints();
+        }
+
+        // Sort OAM
+        sort_oam_by_prio();
+
+#ifdef DEBUG
+        if (debug_mode) {
+            // I know this copies more bytes than it should, but some time has to be wasted for the line to cover an entire scanline
+            memset32(pal_bg_mem, 0x7fff7fff, 512);
+            memcpy32(pal_bg_mem, palette_buffer, 256);
+        }
+#endif
+        // Mark the frame as finished
+        frame_finished = TRUE;
+
+        // Wait for VSYNC
+        VBlankIntrWait();
+    }
+}
+
+u32 paused_routines() {
+    update_flags = UPDATE_NONE;
+    // Dim screen
+    clr_blend_fast(palette_buffer, (COLOR*) black_buffer, pal_bg_mem, 512, 16);
+    mmPause();
+
+    while (1) {
+        key_poll();
+        
+        // Unpause
+        if (key_hit(KEY_START)) {
+            update_flags = UPDATE_ALL;
+            break;
+        }
+
+        // Practice mode
+#ifdef INCLUDE_ENDLESS
+        if (key_hit(KEY_SELECT) && loaded_level_id != endless_ID) {
+#else
+        if (key_hit(KEY_SELECT)) {
+#endif
+            clear_checkpoints();
+            
+            in_practice_mode ^= 1;
+            update_flags = UPDATE_ALL;
+
+            if (!in_practice_mode) {
+                fade_out_level();
+
+                oam_init(shadow_oam, 128);
+                load_level(loaded_level_id);
+
+                frame_finished = TRUE;
+
+                fade_in_level();
+                mmStop();
+            } else {
+                // Start practice song
+                mmStart(MOD_PRACTICE, MM_PLAY_LOOP);
+                put_practice_gui();
+            }
+            break;
+        }
+
+        // Exit level
+        if (key_hit(KEY_B)) {
+            return 1;
+        }
+
+        // Wait for VSYNC
+        VBlankIntrWait();
+    }
+
+    clr_blend_fast(palette_buffer, (COLOR*) black_buffer, pal_bg_mem, 512, 0);
+
+    mmResume();
+
+    return 0;
+}
