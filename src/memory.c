@@ -83,6 +83,11 @@ u8 debug_mode = 0;
 u8 hitbox_display = 0;
 u8 noclip = 0;
 u8 infinite_jump = 0;
+
+u8 cbf_enabled = 0;
+volatile u8 cbf_pending = 0;
+u16 cbf_frame_hit = 0;
+u16 cbf_last_raw = 0;
 #endif
 
 // Flags that indicates if VBLANK sensitive stuff should happen
