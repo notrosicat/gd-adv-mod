@@ -126,6 +126,10 @@ extern u8 debug_mode;
 extern u8 noclip;
 extern u8 infinite_jump;
 extern u8 hitbox_display;
+extern u8 cbf_enabled;
+extern volatile u8 cbf_pending;
+extern u16 cbf_frame_hit;
+extern u16 cbf_last_raw;
 #endif
 
 extern u8 paused;

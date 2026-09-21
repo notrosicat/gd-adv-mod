@@ -20,6 +20,18 @@
 void game_loop();
 void hblank_lvl_select_handler();
 
+#ifdef DEBUG
+IWRAM_CODE void cbf_keypad_handler() {
+    if (!cbf_enabled || game_state != STATE_PLAYING)
+        return;
+
+    cbf_pending = 1;
+
+    // Prevent the interrupt from repeatedly firing while the button is held.
+    irq_disable(II_KEYPAD);
+}
+#endif
+
 #define CHEAT_MENU_ITEMS 4
 #define CHEAT_MENU_PAGES 2
 #define CHEAT_MENU_X 5
@@ -85,13 +97,18 @@ static void cheat_menu_draw(u32 selected) {
         );
         tte_write(line);
 
-    } else {
+        } else {
         // Page 2
 
         tte_set_pos(CHEAT_MENU_X << 3, 7 << 3);
-        tte_write("> INSTANT COMPLETE");
+        tte_write(selected == 0 ? "> CBF" : "  CBF");
+        tte_set_pos(19 << 3, 7 << 3);
+        tte_write(cbf_enabled ? "ON" : "OFF");
 
         tte_set_pos(CHEAT_MENU_X << 3, 9 << 3);
+        tte_write(selected == 1 ? "> INSTANT COMPLETE" : "  INSTANT COMPLETE");
+
+        tte_set_pos(CHEAT_MENU_X << 3, 11 << 3);
         tte_write("A+B TO ACTIVATE");
     }
 
@@ -153,7 +170,7 @@ tte_set_special(0x0000);
         break;
 
     if (key_hit(KEY_UP)) {
-        u32 page_items = (cheat_menu_page == 0) ? 4 : 1;
+        u32 page_items = (cheat_menu_page == 0) ? 4 : 2;
 
         if (selected == 0)
             selected = page_items - 1;
@@ -162,7 +179,7 @@ tte_set_special(0x0000);
     }
 
     if (key_hit(KEY_DOWN)) {
-        u32 page_items = (cheat_menu_page == 0) ? 4 : 1;
+        u32 page_items = (cheat_menu_page == 0) ? 4 : 2;
 
         selected = (selected + 1) % page_items;
     }
@@ -186,7 +203,19 @@ tte_set_special(0x0000);
             set_player_speed();
         }
     }
+    else {
+        if (selected == 0) {
+            cbf_enabled ^= 1;
+
+            if (!cbf_enabled) {
+                cbf_pending = 0;
+                cbf_frame_hit = 0;
+                irq_disable(II_KEYPAD);
+            }
+        }
+    }
 }
+
         cheat_menu_draw(selected);
         VBlankIntrWait();
     }
@@ -320,11 +349,16 @@ void init_maxmod() {
     // 85% volume
     mmSetModuleVolume(819);
     irq_init(NULL);
-    irq_set(II_VBLANK, vblank_handler, 0);
-    irq_set(II_HBLANK, hblank_lvl_select_handler, 0);
-    irq_set(II_GAMEPAK, hang, 0);
-    irq_enable(II_VBLANK);
-    irq_disable(II_HBLANK);
+irq_set(II_VBLANK, vblank_handler, 0);
+irq_set(II_HBLANK, hblank_lvl_select_handler, 0);
+irq_set(II_GAMEPAK, hang, 0);
+irq_set(II_KEYPAD, cbf_keypad_handler, 0);
+
+irq_enable(II_VBLANK);
+irq_disable(II_HBLANK);
+irq_disable(II_KEYPAD);
+
+REG_KEYCNT = KCNT_IRQ | KEY_A | KEY_UP;
     
 }
 
@@ -521,9 +555,30 @@ void exit_level() {
 }
 
 void level_loop() {
-    while (1) { 
-        key_poll();
-        
+    while (1) {
+    key_poll();
+
+#ifdef DEBUG
+    if (cbf_enabled) {
+        // Re-arm the keypad interrupt after A/UP has been released.
+        if (!key_is_down(KEY_A | KEY_UP)) {
+            cbf_last_raw = 0;
+            irq_enable(II_KEYPAD);
+        }
+
+        if (cbf_pending) {
+            cbf_pending = 0;
+            cbf_frame_hit = 1;
+        } else {
+            cbf_frame_hit = 0;
+        }
+    } else {
+        cbf_pending = 0;
+        cbf_frame_hit = 0;
+        irq_disable(II_KEYPAD);
+    }
+#endif
+
         // Reset next sprite index
         nextSpr = 0;
 

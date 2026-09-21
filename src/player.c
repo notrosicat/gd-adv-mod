@@ -215,7 +215,7 @@ void cube_gamemode() {
    
     // If on floor and holding A or UP, jump
     if (!curr_player.disable_jumping && (curr_player.on_floor || infinite_jump) && key_is_down(KEY_A | KEY_UP) && !curr_player.came_from_spider_orb && !curr_player.came_from_dash_orb) {
-        if (key_hit(KEY_A | KEY_UP)) {
+                if (key_hit(KEY_A | KEY_UP) || cbf_frame_hit) {
             curr_player.player_y_speed = -((curr_player.player_size == SIZE_BIG) ? CUBE_FIRST_JUMP_SPEED : CUBE_MINI_FIRST_JUMP_SPEED) * sign;     
         } else {
             curr_player.player_y_speed = -((curr_player.player_size == SIZE_BIG) ? CUBE_JUMP_SPEED : CUBE_MINI_JUMP_SPEED) * sign;       
@@ -340,7 +340,7 @@ void ship_gamemode() {
 
     s8 mirror_sign = screen_mirrored ? 1 : -1;
 
-    if (key_hit(KEY_A | KEY_UP)) {
+    if (key_hit(KEY_A | KEY_UP) || cbf_frame_hit) {
         curr_player.came_from_black_orb = FALSE;
         curr_player.player_buffering = ORB_BUFFER_READY;
     } else {
