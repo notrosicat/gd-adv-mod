@@ -20,7 +20,7 @@
 void game_loop();
 void hblank_lvl_select_handler();
 
-#define CHEAT_MENU_ITEMS 3
+#define CHEAT_MENU_ITEMS 4
 #define CHEAT_MENU_X 5
 #define CHEAT_MENU_Y 5
 
@@ -58,13 +58,22 @@ static void cheat_menu_draw(u32 selected) {
     tte_write(hitbox_display ? "ON" : "OFF");
 
     tte_set_pos(CHEAT_MENU_X << 3, 11 << 3);
-    tte_write(selected == 2 ? "> SPEED" : "  SPEED");
+tte_write(selected == 2 ? "> INFINITE JUMP" : "  INFINITE JUMP");
+tte_set_pos(19 << 3, 11 << 3);
+tte_write(infinite_jump ? "ON" : "OFF");
+
+tte_set_pos(CHEAT_MENU_X << 3, 13 << 3);
+tte_write(selected == 3 ? "> SPEED" : "  SPEED");
+tte_set_pos(19 << 3, 13 << 3);
+static const char *speed_labels[] = { "0.5x", "1x", "2x", "3x", "4x" };
+posprintf(line, "%s", speed_labels[speed_id < SPEED_COUNT ? speed_id : SPEED_X1]);
+tte_write(line);
     tte_set_pos(19 << 3, 11 << 3);
     static const char *speed_labels[] = { "0.5x", "1x", "2x", "3x", "4x" };
     posprintf(line, "%s", speed_labels[speed_id < SPEED_COUNT ? speed_id : SPEED_X1]);
     tte_write(line);
 
-    tte_set_pos(CHEAT_MENU_X << 3, 16 << 3);
+    tte_set_pos(CHEAT_MENU_X << 3, 17 << 3);
     tte_write("A SELECT   B CLOSE");
 }
 
@@ -108,14 +117,15 @@ tte_set_special(0x0000);
         if (key_hit(KEY_DOWN)) selected = (selected + 1) % CHEAT_MENU_ITEMS;
 
         if (key_hit(KEY_A)) {
-            if (selected == 0) noclip ^= 1;
-            else if (selected == 1) hitbox_display ^= 1;
-            else {
-                speed_id++;
-                if (speed_id >= SPEED_COUNT) speed_id = SPEED_X05;
-                set_player_speed();
-            }
-        }
+    if (selected == 0) noclip ^= 1;
+    else if (selected == 1) hitbox_display ^= 1;
+    else if (selected == 2) infinite_jump ^= 1;
+    else {
+        speed_id++;
+        if (speed_id >= SPEED_COUNT) speed_id = SPEED_X05;
+        set_player_speed();
+    }
+}x
 
         cheat_menu_draw(selected);
         VBlankIntrWait();

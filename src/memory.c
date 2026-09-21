@@ -82,6 +82,7 @@ ALIGN4 u8 mixing_buffer[MM_MIXLEN_16KHZ];
 u8 debug_mode = 0;
 u8 hitbox_display = 0;
 u8 noclip = 0;
+u8 infinite_jump = 0;
 #endif
 
 // Flags that indicates if VBLANK sensitive stuff should happen

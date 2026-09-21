@@ -214,7 +214,7 @@ void cube_gamemode() {
     u32 jumped = FALSE;
    
     // If on floor and holding A or UP, jump
-    if (!curr_player.disable_jumping && curr_player.on_floor && key_is_down(KEY_A | KEY_UP) && !curr_player.came_from_spider_orb && !curr_player.came_from_dash_orb) {
+    if (!curr_player.disable_jumping && (curr_player.on_floor || infinite_jump) && key_is_down(KEY_A | KEY_UP) && !curr_player.came_from_spider_orb && !curr_player.came_from_dash_orb) {
         if (key_hit(KEY_A | KEY_UP)) {
             curr_player.player_y_speed = -((curr_player.player_size == SIZE_BIG) ? CUBE_FIRST_JUMP_SPEED : CUBE_MINI_FIRST_JUMP_SPEED) * sign;     
         } else {

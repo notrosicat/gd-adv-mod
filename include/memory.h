@@ -124,6 +124,7 @@ extern ALIGN4 u8 mixing_buffer[MM_MIXLEN_16KHZ];
 #ifdef DEBUG
 extern u8 debug_mode;
 extern u8 noclip;
+extern u8 infinite_jump;
 extern u8 hitbox_display;
 #endif
 
