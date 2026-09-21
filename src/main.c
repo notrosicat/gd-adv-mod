@@ -21,8 +21,11 @@ void game_loop();
 void hblank_lvl_select_handler();
 
 #define CHEAT_MENU_ITEMS 4
+#define CHEAT_MENU_PAGES 2
 #define CHEAT_MENU_X 5
 #define CHEAT_MENU_Y 5
+
+static u8 cheat_menu_page = 0;
 
 static void cheat_menu_restore_level(void) {
     // Restore the level graphics that the temporary text screen replaced.
@@ -43,34 +46,60 @@ static void cheat_menu_restore_level(void) {
 
 static void cheat_menu_draw(u32 selected) {
     char line[32];
+
     tte_erase_rect(0, 0, 240, 160);
+
     tte_set_pos(CHEAT_MENU_X << 3, CHEAT_MENU_Y << 3);
     tte_write("GD ADV MOD MENU");
 
-    tte_set_pos(CHEAT_MENU_X << 3, 7 << 3);
-    tte_write(selected == 0 ? "> NOCLIP" : "  NOCLIP");
-    tte_set_pos(19 << 3, 7 << 3);
-    tte_write(noclip ? "ON" : "OFF");
+    if (cheat_menu_page == 0) {
+        // Page 1
 
-    tte_set_pos(CHEAT_MENU_X << 3, 9 << 3);
-    tte_write(selected == 1 ? "> HITBOXES" : "  HITBOXES");
-    tte_set_pos(19 << 3, 9 << 3);
-    tte_write(hitbox_display ? "ON" : "OFF");
+        tte_set_pos(CHEAT_MENU_X << 3, 7 << 3);
+        tte_write(selected == 0 ? "> NOCLIP" : "  NOCLIP");
+        tte_set_pos(19 << 3, 7 << 3);
+        tte_write(noclip ? "ON" : "OFF");
 
-    tte_set_pos(CHEAT_MENU_X << 3, 11 << 3);
-tte_write(selected == 2 ? "> INFINITE JUMP" : "  INFINITE JUMP");
-tte_set_pos(19 << 3, 11 << 3);
-tte_write(infinite_jump ? "ON" : "OFF");
+        tte_set_pos(CHEAT_MENU_X << 3, 9 << 3);
+        tte_write(selected == 1 ? "> HITBOXES" : "  HITBOXES");
+        tte_set_pos(19 << 3, 9 << 3);
+        tte_write(hitbox_display ? "ON" : "OFF");
 
-tte_set_pos(CHEAT_MENU_X << 3, 13 << 3);
-tte_write(selected == 3 ? "> SPEED" : "  SPEED");
-tte_set_pos(19 << 3, 13 << 3);
-static const char *speed_labels[] = { "0.5x", "1x", "2x", "3x", "4x" };
-posprintf(line, "%s", speed_labels[speed_id < SPEED_COUNT ? speed_id : SPEED_X1]);
-tte_write(line);
+        tte_set_pos(CHEAT_MENU_X << 3, 11 << 3);
+        tte_write(selected == 2 ? "> INFINITE JUMP" : "  INFINITE JUMP");
+        tte_set_pos(19 << 3, 11 << 3);
+        tte_write(infinite_jump ? "ON" : "OFF");
+
+        tte_set_pos(CHEAT_MENU_X << 3, 13 << 3);
+        tte_write(selected == 3 ? "> SPEED" : "  SPEED");
+        tte_set_pos(19 << 3, 13 << 3);
+
+        static const char *speed_labels[] = {
+            "0.5x", "1x", "2x", "3x", "4x"
+        };
+
+        posprintf(
+            line,
+            "%s",
+            speed_labels[speed_id < SPEED_COUNT ? speed_id : SPEED_X1]
+        );
+        tte_write(line);
+
+    } else {
+        // Page 2
+
+        tte_set_pos(CHEAT_MENU_X << 3, 7 << 3);
+        tte_write("> INSTANT COMPLETE");
+
+        tte_set_pos(CHEAT_MENU_X << 3, 9 << 3);
+        tte_write("A+B TO ACTIVATE");
+    }
 
     tte_set_pos(CHEAT_MENU_X << 3, 17 << 3);
-    tte_write("A SELECT   B CLOSE");
+    tte_write("L PREV   R NEXT");
+
+    tte_set_pos(CHEAT_MENU_X << 3, 18 << 3);
+    tte_write("A SELECT B CLOSE");
 }
 
 static void cheat_menu(void) {
@@ -103,26 +132,61 @@ memcpy32(pal_bg_mem, palette_buffer, 256);
 tte_set_special(0x0000);
 
     while (1) {
-        key_poll();
+    key_poll();
 
-        if (key_hit(KEY_B)) break;
-        if (key_hit(KEY_UP)) {
-            if (selected == 0) selected = CHEAT_MENU_ITEMS - 1;
-            else selected--;
+    if (key_hit(KEY_R)) {
+        cheat_menu_page++;
+        if (cheat_menu_page >= CHEAT_MENU_PAGES)
+            cheat_menu_page = 0;
+        selected = 0;
+    }
+
+    if (key_hit(KEY_L)) {
+        if (cheat_menu_page == 0)
+            cheat_menu_page = CHEAT_MENU_PAGES - 1;
+        else
+            cheat_menu_page--;
+        selected = 0;
+    }
+
+    if (key_hit(KEY_B))
+        break;
+
+    if (key_hit(KEY_UP)) {
+        u32 page_items = (cheat_menu_page == 0) ? 4 : 1;
+
+        if (selected == 0)
+            selected = page_items - 1;
+        else
+            selected--;
+    }
+
+    if (key_hit(KEY_DOWN)) {
+        u32 page_items = (cheat_menu_page == 0) ? 4 : 1;
+
+        selected = (selected + 1) % page_items;
+    }
+
+    if (key_hit(KEY_A)) {
+    if (cheat_menu_page == 0) {
+        if (selected == 0) {
+            noclip ^= 1;
         }
-        if (key_hit(KEY_DOWN)) selected = (selected + 1) % CHEAT_MENU_ITEMS;
+        else if (selected == 1) {
+            hitbox_display ^= 1;
+        }
+        else if (selected == 2) {
+            infinite_jump ^= 1;
+        }
+        else if (selected == 3) {
+            speed_id++;
+            if (speed_id >= SPEED_COUNT)
+                speed_id = SPEED_X05;
 
-        if (key_hit(KEY_A)) {
-    if (selected == 0) noclip ^= 1;
-    else if (selected == 1) hitbox_display ^= 1;
-    else if (selected == 2) infinite_jump ^= 1;
-    else {
-        speed_id++;
-        if (speed_id >= SPEED_COUNT) speed_id = SPEED_X05;
-        set_player_speed();
+            set_player_speed();
+        }
     }
 }
-
         cheat_menu_draw(selected);
         VBlankIntrWait();
     }
@@ -465,15 +529,20 @@ void level_loop() {
 
         // L+R opens the in-level cheat menu.
 #ifdef DEBUG
-        if (key_is_down(KEY_L | KEY_R) && (key_hit(KEY_L) || key_hit(KEY_R)) && !complete_cutscene) {
-            cheat_menu();
-            nextSpr = 0;
-        }
+if (key_is_down(KEY_L | KEY_R) && (key_hit(KEY_L) || key_hit(KEY_R)) && !complete_cutscene) {
+    cheat_menu();
+    nextSpr = 0;
+}
 #endif
+// A+B activates Instant Complete
+if (key_is_down(KEY_A | KEY_B) &&
+    (key_hit(KEY_A) || key_hit(KEY_B)) &&
+    !complete_cutscene) {
+    complete_cutscene = TRUE;
+}
 
-        // If pressed start, pause the game
-        if (key_hit(KEY_START) && !complete_cutscene) {
-            if (paused_routines()) {
+// If pressed start, pause the game
+if (key_hit(KEY_START) && !complete_cutscene) {,            if (paused_routines()) {
                 exit_level();
                 return;
             }
