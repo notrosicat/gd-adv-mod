@@ -68,10 +68,6 @@ tte_set_pos(19 << 3, 13 << 3);
 static const char *speed_labels[] = { "0.5x", "1x", "2x", "3x", "4x" };
 posprintf(line, "%s", speed_labels[speed_id < SPEED_COUNT ? speed_id : SPEED_X1]);
 tte_write(line);
-    tte_set_pos(19 << 3, 11 << 3);
-    static const char *speed_labels[] = { "0.5x", "1x", "2x", "3x", "4x" };
-    posprintf(line, "%s", speed_labels[speed_id < SPEED_COUNT ? speed_id : SPEED_X1]);
-    tte_write(line);
 
     tte_set_pos(CHEAT_MENU_X << 3, 17 << 3);
     tte_write("A SELECT   B CLOSE");
@@ -125,7 +121,7 @@ tte_set_special(0x0000);
         if (speed_id >= SPEED_COUNT) speed_id = SPEED_X05;
         set_player_speed();
     }
-}x
+}
 
         cheat_menu_draw(selected);
         VBlankIntrWait();
