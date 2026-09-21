@@ -1,11 +1,11 @@
 ![image](https://github.com/AleFunky/geometry_dash_advance/blob/main/images/cover.jpg)
 
 # About
-Geometry Dash Advance is a demake of Geometry Dash for the GBA.
+A Geometry Dash Mod menu for the remake of Geometry Dash for the GBA.
 
 # Links
 ## Discord server
-Join our Discord: [CLICK HERE](https://discord.gg/Yh6JrS7eSU)
+Join Their Discord: [CLICK HERE](https://discord.gg/Yh6JrS7eSU)
 
 ## Download
 Download latest stable version: [CLICK HERE](https://github.com/AleFunky/geometry_dash_advance/releases)
