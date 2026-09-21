@@ -1,0 +1,4 @@
+// Level Data Header
+#define ELECTROMANADVENTURES_l2_TOTAL_BLOCKS 23733
+#define ELECTROMANADVENTURES_l2_RLE_DATA_SIZE 3792
+extern const unsigned short electromanadventures_l2_level_data[ELECTROMANADVENTURES_l2_RLE_DATA_SIZE];

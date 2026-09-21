@@ -1,0 +1,46 @@
+#define ICONS_COLUMNS 6
+#define ICONS_ROWS 2
+#define ICONS_PER_PAGE (ICONS_COLUMNS * ICONS_ROWS)
+
+#define ICON_X 39
+#define ICON_Y 93
+
+#define ICON_SIZE 16
+#define ICON_MARGIN_H 10
+#define ICON_MARGIN_V 6
+#define ICON_STEP_H (ICON_SIZE + ICON_MARGIN_H)
+#define ICON_STEP_V (ICON_SIZE + ICON_MARGIN_V)
+
+#define VRAM_ICON_OFFSET 16
+
+#define SELECTED_ICON_X 88
+#define SELECTED_ICON_Y 16
+
+#define ICON_KIT_SELECTION_INDEX 0x60
+
+#define ICON_TAB_X 10
+#define ICON_TAB_Y 9
+
+#define PALETTE_KIT_CHR_INDEX 256
+
+#define PALETTE_KIT_ICONS_WIDTH (((GAMEMODE_COUNT - 1) * ICON_STEP_H) + ICON_SIZE)
+
+#define PALETTE_KIT_ICONS_X (SCREEN_WIDTH/2 - (PALETTE_KIT_ICONS_WIDTH / 2)) - 8
+#define PALETTE_KIT_ICONS_Y 32
+
+#define PALETTE_KIT_SELECTION_X 40
+#define PALETTE_KIT_SELECTION_Y 68
+
+#define PALETTE_KIT_BUTTON_X 136
+#define PALETTE_KIT_BUTTON_Y 16
+#define PALETTE_KIT_BUTTON_ID 1012
+
+#define PALETTE_KIT_COL1 0
+#define PALETTE_KIT_COL2 1
+#define PALETTE_KIT_GLOW 2
+
+#define NUM_COLORS (sizeof(palette_kit_colors) / sizeof(COLOR))
+
+extern const COLOR palette_kit_colors[112];
+
+void icon_kit_loop();

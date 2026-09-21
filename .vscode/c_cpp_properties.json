@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "GBA",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/build",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/levels",
+                "${env:DEVKITPRO}/libtonc/include",
+                "${env:DEVKITPRO}/libgba/include"
+            ],
+            "defines": [],
+            "compilerPath": "${env:DEVKITPRO}/devkitARM/bin/arm-none-eabi-gcc",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
+}

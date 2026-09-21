@@ -1,0 +1,44 @@
+x -> delta x (from last sprite)
+y -> y position
+t -> sprite id 
+    hword 1: xxxx xxxx xxxx xxxx 
+    hword 2: yyyy yyyy yyyy yyyy
+    hword 3: tttt tttt tttt tttt
+
+Normal objects (sprite id not 3, 43, 44 or 89):
+
+P -> priority        A -> 16 bit angle   E -> enable rotation
+H -> horizontal flip Z -> z index (0-62)
+V -> vertical flip   p -> palette
+    hword 4: 0000 0000 00PP PEHV 
+    hword 5: 0000 00pp ppZZ ZZZZ
+If E is 1:
+    hword 6: AAAA AAAA AAAA AAAA
+
+Color trigger (sprite id == 3):
+
+f -> duration in frames               E -> enable copy     T -> touch trigger
+b,g,r -> blue, green, blue components c -> copy channel id
+C -> channel id                       B -> blending
+    hword 4: ffff ffff ffff fCCC 
+    hword 5: 0bbb bbgg gggr rrrr
+    hword 6: 0000 0000 0TBc cccE
+
+Sprite that behaves like a metatile (sprite id == 43 or 44):
+
+P -> priority        M -> metatile id    A -> angle
+H -> horizontal flip Z -> z index (0-62)
+V -> vertical flip   p -> palette
+    hword 4: pppp ZZZZ ZZPP PEHV 
+    hword 5: MMMM MMMM MMMM MMMM
+    hword 6: AAAA AAAA AAAA AAAA
+
+Secret coin (sprite id == 89)
+
+P -> priority        A -> 16 bit angle   E -> enable rotation
+H -> horizontal flip Z -> z index (0-62) C, c -> coin id (usually three bits (C), but there is no bound so it can take the rest of the hword (c))
+V -> vertical flip   p -> palette
+    hword 4: cccc cccC CCPP PEHV 
+    hword 5: 0000 00pp ppZZ ZZZZ
+If E is 1:
+    hword 6: AAAA AAAA AAAA AAAA

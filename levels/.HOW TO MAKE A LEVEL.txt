@@ -1,0 +1,78 @@
+If you want to make a level, copy the template.tmx file and open it in Tiled.
+
+-- LAYERS --
+There are a total of 3 layers: L1, L2 and SP. 
+
+L1 and L2 are tiled layers and use metatiles/blocks. They are found in the tileset called "famidash".
+For the colored blocks, the color scheme follows the 1.9 editor mode, this is:
+- The color in tiled specified the color Channel
+    - Black is the default black color
+    - Pink is col 1
+    - Yellow is col 2
+    - Light blue is col 3 
+    - Green is col 4
+    - Dark Blue is LBG 
+
+SP layer is a object layer, this means that objects can be freely placed. The layer is for objects, those are in the tileset called "sprites".
+
+Each SP object contain some attributes. In the case for every object except some, it contains the following attributes.
+- Enable rotation: enables the sprite to be rotated. Keep in mind that the GBA can only support up to 32 rotation values (5 are already taken by both players, pulsing objects and rotating saws).
+- Rotation: if enable rotation is activated, then you need to specify the angle (in degrees). The rotation direction is clockwise. Make sure you dont rotate via Tiled an sprite.
+- Hflip and Vflip: enables the sprite to be flipped horizontally or/and vertically. This option is not compatible with enable rotation as the GBA doesn't support flipping rotated sprites.
+- BG layer: chooses in which BG layer (0-3) the sprite will be placed. Layer 0 is L1, layer 1 is L2, layer 2 is the background and layer 3 is currently unused. If you for example
+            put a saw in bg layer 2, it will be shown above the background, but below both metatile layers.
+- Z Index: marks the drawing order of the objects. Lowest is highest priority. This number ranges from 0 to 30 (inclusive). Not setting the attribute keeps the default Z index of the object.
+- Color channel: the color channel to use. One of the following: BLACK, LBG, 1, 2, 3, 4.
+
+In the case you want to put a block offgrid, you can place blocks on the tileset "famidash" on the object layer. Keep in mind that there is a limit on how many objects can be on-screen (currently 96).
+
+In the case of color triggers (sprite #3), the attribute set is different:
+- Channel: the color channel to be modified. One of the following: BG, GROUND, OBJ, LINE, 1, 2, 3, 4.
+- Color: the color in RGB888. This is converted into BGR555 by the export script.
+- Color blending: blends the color with the BG color using additive blending. This is the "blending" checkbox in GD's color triggers (added in 1.7).
+- Copy color: this enables copying a color from another channel. 
+- Copy from channel: in the case that copy color is enabled, copy from the channel specified. The channel list is the same as before but with the addition of P1 and P2 (player color).
+- Frames: number of frames that the transition will last. For reference, 1 second is 60 frames. Max value is 8192, or 2 minutes and 16 minutes.
+- Touch trigger: mark if this trigger should activate by touching its hitbox (16x16 of size) instead of by crossing its center horizontally (added in 1.5).
+
+NOTE: when making a ceiling for gamemodes other than cube, make sure the size of each square is 4x4 blocks wide, not 3x4. This is a common mistake. Usually, space above the ceiling is filled with the black metatile (metatile #125).
+
+-- MAP ATTRIBUTES --
+The map has its attributes aswell, those define the properties of the level, such as the name, starting gamemode, etc. You can find them in the toolbar above in "Map" > "Map attributes". The attributes are as following:
+- BG: the starting background color in RGB888.
+- GROUND: the starting ground color in RGB888.
+- Gamemode: the starting gamemode, the values are as follows: 0 - Cube, 1 - Ship, 2 - Ball (to be expanded later).
+- Level name: the level name that will be shown in the level menu. Keep in mind lowercase characters will be converted to uppercase.
+- Song: the song that the level will use. This is the name of the song file in the audio folderm, without extension and in uppercase.
+- Speed: the starting speed, the values are as follows: 0 - 0.5x, 1 - 1x, 2 - 2x, 3 - 3x, 4 - 4x.
+- Difficulty: the difficulty face displayed in the level menu. The values are as follows: EASY, NORMAL, HARD, HARDER, INSANE, DEMON, AUTO, NA, EASY_DEMON, MEDIUM_DEMON, HARD_DEMON, INSANE_DEMON, EXTREME_DEMON.
+- Stars: the value that the number on the level menu with an star will show (range: 0-99 stars).
+
+To change the level size, use Tiled's resize map tool to change the size of the level. The engine supports up to 124 vertical blocks. Make sure to fill the new area with metatile #0 (air).
+
+-- ENDLESS PARTS -- 
+Endless parts have different map attributes and the ones mentioned before don't do anything. Here is the endless exclusive attributes:
+- Rarity: the rarity the part has. Highest rarity is 100, lower means more rare.
+
+-- EXPORTING --
+Please make sure you have Python 3.12.x installed. Older versions might give errors.
+
+Once you have finished the level, export the .tmx file into .json. 
+
+If not making an endless part, once you exported the level, open "export_levels.sh" (or .bat in Windows) in a text editor (Linux, make sure line breaks are set as CRLF) and 
+add the name of the .json file into the arguments. The arguments are separated by spaces after "python3 export_levels.py". 
+
+Make sure you have installed python3 and make in your system. 
+Then run the export levels script you just edited, to export all levels. You can also run "make levels". If the export was succesful, the last message should say the final size of all levels. If an error popped, you probably have messed up something.
+
+-- BUILDING -- 
+There are two ways. Hard way is to use Linux. Easy way is to use Windows. Either way, you need to install devkitpro.
+You can find instructions on how to install devkitpro here: https://devkitpro.org/wiki/Getting_Started
+[note] The official LINUX instruction is incomplete as it does include the part where you add devkitpro to path and to somewhere else (4 commands in command shell one). Also the whole installation is way harder. This is why using Windows is easier.[/note]
+
+Once you have installed devkitpro, to build the game run "make".
+In Windows, you use MSys2 to navigate it to your folder (path must have only eng symbols and "_"). Then run make.
+In Linux, just use the terminal lol. Also navigate it to your folder and run make.
+If the game compiled, the last line should say "rom build/gd_adv.gba", if not, an error probably occured.
+
+If you have modified graphics, you have to run "make clean" and then run "make" again.
