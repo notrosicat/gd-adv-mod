@@ -87,15 +87,15 @@ static void cheat_menu(void) {
     REG_BG2VOFS = 0;
     memset16(&se_mem[29][0], 0, sizeof(SCREENBLOCK) / sizeof(u16));
 
-    // Use a known-visible palette entry for the menu text.
-    palette_buffer[15] = CLR_WHITE;
-    memcpy32(pal_bg_mem, palette_buffer, 256);
+    // Make the menu text bright white.
+palette_buffer[15] = CLR_WHITE;
+memcpy32(pal_bg_mem, palette_buffer, 256);
 
     tte_init_se(
-        2,
-        BG_CBB(0) | BG_SBB(29) | BG_REG_32x32 | BG_PRIO(0),
-        0, 15, 0, &pusabFont, NULL);
-    tte_set_special(0x2000);
+    2,
+    BG_CBB(0) | BG_SBB(29) | BG_REG_32x32 | BG_PRIO(0),
+    0, CLR_WHITE, 14, NULL, NULL);
+tte_set_special(0x0000);
 
     while (1) {
         key_poll();
