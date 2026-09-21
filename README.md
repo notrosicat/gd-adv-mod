@@ -25,6 +25,10 @@ A Geometry Dash Mod menu for the remake of Geometry Dash for the GBA.
 |Redgd|graphics|
 |[rosicat](https://github.com/notrosicat)|random kid who made the mod menu|
 
+# Links
+## Discord server
+Join Their Discord: [CLICK HERE](https://discord.gg/Yh6JrS7eSU)
+
 
 ## Music credits
 Here are the original authors of the soundtrack and the person in charge of cover them to work on the GBA: [Click Here](https://github.com/AleFunky/geometry_dash_advance/blob/main/audio/Audio%20credits.md)
