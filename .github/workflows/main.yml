@@ -1,0 +1,22 @@
+name: Build GBA mod
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Build ROM
+        run: make -j2
+
+      - name: Upload GBA
+        uses: actions/upload-artifact@v4
+        with:
+          name: gd-adv-mod
+          path: build/*.gba
