@@ -535,7 +535,9 @@ if (key_is_down(KEY_L | KEY_R) && (key_hit(KEY_L) || key_hit(KEY_R)) && !complet
 }
 #endif
 // A+B activates Instant Complete
-if (key_is_down(KEY_A | KEY_B) &&
+// A+B activates Instant Complete
+if (key_is_down(KEY_A) &&
+    key_is_down(KEY_B) &&
     (key_hit(KEY_A) || key_hit(KEY_B)) &&
     !complete_cutscene) {
     complete_cutscene = TRUE;
