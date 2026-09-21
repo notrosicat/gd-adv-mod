@@ -542,11 +542,12 @@ if (key_is_down(KEY_A | KEY_B) &&
 }
 
 // If pressed start, pause the game
-if (key_hit(KEY_START) && !complete_cutscene) {,            if (paused_routines()) {
-                exit_level();
-                return;
-            }
-        }
+if (key_hit(KEY_START) && !complete_cutscene) {
+    if (paused_routines()) {
+        exit_level();
+        return;
+    }
+}
 
         if (cutscene_frame == EXIT_CUTSCENE_FRAME) {
             game_state = STATE_LEVEL_SELECT;      
