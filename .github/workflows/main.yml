@@ -14,6 +14,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Inspect Maxmod
+        run: |
+          find "$DEVKITPRO" -type f \( -name "maxmod.h" -o -name "*maxmod*.h" -o -name "libmm.a" \) -print
+          grep -Rni "DMA\|TIMER" "$DEVKITPRO/libtonc/include" "$DEVKITPRO/libgba/include" 2>/dev/null | head -50 || true
+
       - name: Make application
         run: |
           make
