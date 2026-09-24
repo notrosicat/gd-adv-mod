@@ -1,26 +1,50 @@
-![Geometry Dash Advance](https://github.com/AleFunky/geometry_dash_advance/blob/main/images/cover.jpg)
+![Geometry Dash Advance](https://raw.githubusercontent.com/AleFunky/geometry_dash_advance/main/images/cover.jpg)
 
 # Geometry Dash Advance — Mod Menu
 
 A fan-made mod menu for **Geometry Dash Advance**, the GBA remake of Geometry Dash.
 
-This project adds an in-game mod menu to the GBA version, giving players access to various gameplay options and cheats.
+This project adds an in-game mod menu with gameplay cheats, including **CBF (Click Between Frames)** for improved input timing.
 
 ## Features
 
+- **CBF (Click Between Frames)** — Samples button states between regular game-frame input checks.
 - **Noclip** — Allows the player to pass through obstacles.
 - **Hitbox Display** — Displays player hitboxes.
 - **Speed Control** — Change the player's speed between multiple speed settings.
 - **Infinite Jump** — Allows the player to jump while airborne.
+- **Instant Complete** — Complete the current level using the mod's activation input.
 - **In-Game Mod Menu** — Toggle cheats directly from the game.
 
-## Mod Menu Controls
+> **Note:** CBF is currently experimental.
+
+## Mod Menu
+
+Open the mod menu during a level with **L + R**.
+
+### Controls
 
 | Button | Action |
 |---|---|
 | **UP / DOWN** | Navigate the menu |
 | **A** | Select / toggle a cheat |
 | **B** | Close the menu |
+| **L** | Previous page |
+| **R** | Next page |
+
+## CBF
+
+**CBF (Click Between Frames)** is designed to improve input timing by sampling button states between normal game-frame input checks.
+
+It can be enabled or disabled from the mod menu and is particularly useful when playing at a stable or unstable frame rate.
+
+CBF is experimental and may be improved further in future releases.
+
+## Download
+
+Download the latest release from the project's **[GitHub Releases](https://github.com/notrosicat/gd-adv-mod/releases)** page.
+
+The ROM is distributed as a `.zip` file containing the `.gba` build.
 
 ## Building
 
@@ -32,53 +56,42 @@ The included GitHub Actions workflow can also automatically build the project.
 
 After installing the required devkitPro tools and setting up the appropriate environment variables:
 
-    make -j2
+```bash
+make -j2
+```
 
 The resulting `.gba` file will be placed in the `build/` directory.
 
-### GitHub Actions
-
-You can build the project using GitHub Actions:
-
-1. Open the **Actions** tab.
-2. Select **Build GBA mod**.
-3. Select **Run workflow**.
-4. Wait for the build to finish.
-5. Download the generated `gd-adv-mod` artifact.
-
-## Project Status
-
-This mod menu is currently a work in progress.
-
-More cheats, improvements, fixes, and other features may be added in the future.
+Future releases may add new cheats, improvements, fixes, and other features.
 
 ## Credits
 
 ### Dev-Team
-|Contributor|Role|
+
+| Contributor | Role |
 |---|---|
-|[AleFunky](https://github.com/AleFunky)|lead dev, code, levels, testing and bugfixes|
-|[ElAngel378](https://github.com/ElAngel378)|music, testing, bugfixes and graphics|
-|[orionconstel](https://github.com/orionConstel)|levels, music, graphics and bugfixes|
-|[adrluc096](https://github.com/123456oil)|graphics|
-|[Okujassu](https://github.com/okujassu)|levels, music|
-|[milkywaydotmoe](https://github.com/milkywaydotmoe)|music and graphics|
-|[KawaiiDawn](https://github.com/Astroclimber26)|graphics|
-|[KirikkSiSq](https://github.com/KirikkSiSq)|graphics|
-|Hatswitch|Music and levels|
-|[SeaGlowingPro](https://github.com/SeaGlowingPro)|levels|
-|Crafty Jumper|music and levels (Select Payment Type, Pyrophoric)|
-|YourLocalProgrammer|levels|
-|Nicolestarlight|music|
-|[Sotos_24](https://github.com/Soteris24)|music|
-|Redgd|graphics|
-|[rosicat](https://github.com/notrosicat)|random kid who made the mod menu|
+| [AleFunky](https://github.com/AleFunky) | Lead dev, code, levels, testing and bugfixes |
+| [ElAngel378](https://github.com/ElAngel378) | Music, testing, bugfixes and graphics |
+| [orionconstel](https://github.com/orionConstel) | Levels, music, graphics and bugfixes |
+| [adrluc096](https://github.com/123456oil) | Graphics |
+| [Okujassu](https://github.com/okujassu) | Levels, music |
+| [milkywaydotmoe](https://github.com/milkywaydotmoe) | Music and graphics |
+| [KawaiiDawn](https://github.com/Astroclimber26) | Graphics |
+| [KirikkSiSq](https://github.com/okujassu) | Graphics |
+| Hatswitch | Music and levels |
+| [SeaGlowingPro](https://github.com/SeaGlowingPro) | Levels |
+| Crafty Jumper | Music and levels (Select Payment Type, Pyrophoric) |
+| YourLocalProgrammer | Levels |
+| Nicolestarlight | Music |
+| [Sotos_24](https://github.com/Soteris24) | Music |
+| Redgd | Graphics |
+| [rosicat](https://github.com/notrosicat) | Mod menu development |
 
 # Links
 
 ## Discord Server
 
-Join Their Discord: [CLICK HERE](https://discord.gg/Yh6JrS7eSU)
+Join their Discord: [CLICK HERE](https://discord.gg/Yh6JrS7eSU)
 
 ## Music Credits
 
@@ -88,11 +101,11 @@ Here are the original authors of the soundtrack and the people responsible for c
 
 ## Additional Thanks
 
-|Additional thanks|Name|
+| Additional thanks | Name |
 |---|---|
-|RobTop Games|original creator of Geometry Dash|
-|[TFDSoft (discord)](https://discord.gg/PCbwQaZs8K)|team in charge of Famidash|
-|[VGM & other instrument sources (discord)](https://discord.gg/m4qzYNGHuS)|samples|
+| RobTop Games | Original creator of Geometry Dash |
+| [TFDSoft (Discord)](https://discord.gg/PCbwQaZs8K) | Team in charge of Famidash |
+| [VGM & other instrument sources (Discord)](https://discord.gg/m4qzYNGHuS) | Samples |
 
 ## Disclaimer
 
