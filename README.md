@@ -16,7 +16,7 @@ This project adds an in-game mod menu with gameplay cheats, including **CBF (Cli
 - **Instant Complete** — Complete the current level using the mod's activation input.
 - **In-Game Mod Menu** — Toggle cheats directly from the game.
 
-> **Note:** CBF is currently experimental.
+> **Note:** CBF is currently experimental and may be unstable for some devices.
 
 ## Mod Menu
 
