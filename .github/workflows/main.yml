@@ -18,6 +18,7 @@ jobs:
         run: |
           find "$DEVKITPRO" -type f \( -name "maxmod.h" -o -name "*maxmod*.h" -o -name "libmm.a" \) -print
           grep -Rni "DMA\|TIMER" "$DEVKITPRO/libtonc/include" "$DEVKITPRO/libgba/include" 2>/dev/null | head -50 || true
+          arm-none-eabi-nm -C "$DEVKITPRO/libgba/lib/libmm.a" | grep -Ei "dma|timer|sound|mix" | head -100 || true
 
       - name: Make application
         run: |
