@@ -130,6 +130,7 @@ extern u8 cbf_enabled;
 extern volatile u8 cbf_pending;
 extern u16 cbf_frame_hit;
 extern u16 cbf_last_raw;
+extern u16 cbf_key_samples[160];
 #endif
 
 extern u8 paused;

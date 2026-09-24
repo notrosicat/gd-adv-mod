@@ -20,17 +20,44 @@
 void game_loop();
 void hblank_lvl_select_handler();
 
-#ifdef DEBUG
-IWRAM_CODE void cbf_keypad_handler() {
-    if (!cbf_enabled || game_state != STATE_PLAYING)
-        return;
-
-    cbf_pending = 1;
-
-    // Prevent the interrupt from repeatedly firing while the button is held.
-    irq_disable(II_KEYPAD);
+static void cbf_dma_stop(void) {
+    REG_DMA3CNT = 0;
 }
-#endif
+
+static void cbf_dma_start(void) {
+    REG_DMA3CNT = 0;
+
+    REG_DMA3SAD = (u32)&REG_KEYINPUT;
+    REG_DMA3DAD = (u32)cbf_key_samples;
+    REG_DMA3CNT = 160
+                | DMA_DST_RELOAD
+                | DMA_SRC_FIXED
+                | DMA_REPEAT
+                | DMA_HBLANK
+                | DMA16
+                | DMA_ENABLE;
+}
+
+static void cbf_dma_process(void) {
+    const u16 mask = KEY_A | KEY_UP;
+    u16 previous = cbf_last_raw;
+    u16 hit = 0;
+
+    for (u32 i = 0; i < 160; i++) {
+        u16 raw = cbf_key_samples[i];
+
+        if ((previous & mask) && !(raw & mask)) {
+            hit = 1;
+        }
+
+        previous = raw;
+    }
+
+    cbf_last_raw = previous;
+    cbf_frame_hit = hit;
+}
+
+
 
 #define CHEAT_MENU_ITEMS 4
 #define CHEAT_MENU_PAGES 2
@@ -207,10 +234,16 @@ tte_set_special(0x0000);
         if (selected == 0) {
             cbf_enabled ^= 1;
 
-            if (!cbf_enabled) {
+            if (cbf_enabled) {
                 cbf_pending = 0;
                 cbf_frame_hit = 0;
-                irq_disable(II_KEYPAD);
+                cbf_last_raw = KEY_A | KEY_UP;
+                memset(cbf_key_samples, KEY_A | KEY_UP, sizeof(cbf_key_samples));
+                cbf_dma_start();
+            } else {
+                cbf_pending = 0;
+                cbf_frame_hit = 0;
+                cbf_dma_stop();
             }
         }
     }
@@ -236,6 +269,14 @@ tte_set_special(0x0000);
 
 void vblank_handler() {
     mmVBlank();
+
+#ifdef DEBUG
+    if (cbf_enabled) {
+        cbf_dma_stop();
+        cbf_dma_process();
+        cbf_dma_start();
+    }
+#endif
 
     // Only use the update handler on a level
     if (game_state == STATE_PLAYING && frame_finished) {
@@ -352,13 +393,10 @@ void init_maxmod() {
 irq_set(II_VBLANK, vblank_handler, 0);
 irq_set(II_HBLANK, hblank_lvl_select_handler, 0);
 irq_set(II_GAMEPAK, hang, 0);
-irq_set(II_KEYPAD, cbf_keypad_handler, 0);
 
 irq_enable(II_VBLANK);
 irq_disable(II_HBLANK);
-irq_disable(II_KEYPAD);
 
-REG_KEYCNT = KCNT_IRQ | KEY_A | KEY_UP;
     
 }
 
@@ -558,26 +596,7 @@ void level_loop() {
     while (1) {
     key_poll();
 
-#ifdef DEBUG
-    if (cbf_enabled) {
-        // Re-arm the keypad interrupt after A/UP has been released.
-        if (!key_is_down(KEY_A | KEY_UP)) {
-            cbf_last_raw = 0;
-            irq_enable(II_KEYPAD);
-        }
 
-        if (cbf_pending) {
-            cbf_pending = 0;
-            cbf_frame_hit = 1;
-        } else {
-            cbf_frame_hit = 0;
-        }
-    } else {
-        cbf_pending = 0;
-        cbf_frame_hit = 0;
-        irq_disable(II_KEYPAD);
-    }
-#endif
 
         // Reset next sprite index
         nextSpr = 0;

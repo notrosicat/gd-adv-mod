@@ -88,6 +88,9 @@ u8 cbf_enabled = 0;
 volatile u8 cbf_pending = 0;
 u16 cbf_frame_hit = 0;
 u16 cbf_last_raw = 0;
+
+// DMA3 captures keypad state once per HBlank.
+ALIGN4 u16 cbf_key_samples[160];
 #endif
 
 // Flags that indicates if VBLANK sensitive stuff should happen
