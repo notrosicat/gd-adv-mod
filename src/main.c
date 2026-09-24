@@ -16,6 +16,7 @@
 #include "posprintf.h"
 #include "metaspr.h"
 #include "sprite_loading.h"
+#include <string.h>
 
 void game_loop();
 void hblank_lvl_select_handler();
@@ -33,8 +34,8 @@ static void cbf_dma_start(void) {
                 | DMA_DST_RELOAD
                 | DMA_SRC_FIXED
                 | DMA_REPEAT
-                | DMA_HBLANK
-                | DMA16
+                | DMA_AT_HBLANK
+                | DMA_16
                 | DMA_ENABLE;
 }
 
