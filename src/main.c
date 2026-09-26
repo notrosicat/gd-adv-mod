@@ -298,6 +298,8 @@ tte_set_special(0x0000);
             }
             else if (selected == 1) {
                 tas_start_recording();
+                __key_prev = 0;
+                __key_curr = 0;
                 break;
             }
             else if (selected == 2) {

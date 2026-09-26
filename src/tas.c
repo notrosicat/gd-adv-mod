@@ -26,8 +26,16 @@ void tas_update(void) {
 
         case TAS_PLAYBACK:
             if (tas_playback_frame < tas_frame_count) {
-                __key_prev = __key_curr;
-                __key_curr = tas_inputs[tas_playback_frame];
+                u32 frame = tas_playback_frame;
+
+                __key_curr = tas_inputs[frame];
+
+                if (frame == 0) {
+                    __key_prev = tas_inputs[0];
+                } else {
+                    __key_prev = tas_inputs[frame - 1];
+                }
+
                 tas_playback_frame++;
             } else {
                 tas_stop_playback();
