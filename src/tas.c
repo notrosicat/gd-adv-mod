@@ -5,6 +5,8 @@ TasMode tas_mode = TAS_DISABLED;
 u32 tas_frame_count = 0;
 u32 tas_playback_frame = 0;
 
+static u16 tas_inputs[TAS_MAX_FRAMES];
+
 void tas_init(void) {
     tas_mode = TAS_DISABLED;
     tas_frame_count = 0;
@@ -15,6 +17,7 @@ void tas_update(void) {
     switch (tas_mode) {
         case TAS_RECORDING:
             if (tas_frame_count < TAS_MAX_FRAMES) {
+                tas_inputs[tas_frame_count] = __key_curr;
                 tas_frame_count++;
             } else {
                 tas_stop_recording();
@@ -23,6 +26,8 @@ void tas_update(void) {
 
         case TAS_PLAYBACK:
             if (tas_playback_frame < tas_frame_count) {
+                __key_prev = __key_curr;
+                __key_curr = tas_inputs[tas_playback_frame];
                 tas_playback_frame++;
             } else {
                 tas_stop_playback();
