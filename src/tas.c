@@ -5,7 +5,7 @@ TasMode tas_mode = TAS_DISABLED;
 u32 tas_frame_count = 0;
 u32 tas_playback_frame = 0;
 
-static u16 tas_inputs[TAS_MAX_FRAMES];
+EWRAM_DATA static u16 tas_inputs[TAS_MAX_FRAMES];
 
 void tas_init(void) {
     tas_mode = TAS_DISABLED;
