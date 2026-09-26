@@ -17,6 +17,7 @@
 #include "metaspr.h"
 #include "sprite_loading.h"
 #include <string.h>
+#include "tas.h"
 
 void game_loop();
 void hblank_lvl_select_handler();
@@ -469,6 +470,7 @@ void rom_waitstates() {
 void main_loop();
 
 void init_variables() {
+    tas_init();
     gamemode_upload_buffer[ID_PLAYER_1] = -1;
     gamemode_upload_buffer[ID_PLAYER_2] = -1;
 }
