@@ -62,7 +62,7 @@ static void cbf_dma_process(void) {
 
 
 #define CHEAT_MENU_ITEMS 4
-#define CHEAT_MENU_PAGES 2
+#define CHEAT_MENU_PAGES 3
 #define CHEAT_MENU_X 5
 #define CHEAT_MENU_Y 5
 
@@ -126,7 +126,7 @@ static void cheat_menu_draw(u32 selected) {
         );
         tte_write(line);
 
-        } else {
+        } else if (cheat_menu_page == 1) {
         // Page 2
 
         tte_set_pos(CHEAT_MENU_X << 3, 7 << 3);
@@ -139,6 +139,33 @@ static void cheat_menu_draw(u32 selected) {
 
         tte_set_pos(CHEAT_MENU_X << 3, 11 << 3);
         tte_write("A+B TO ACTIVATE");
+
+    } else {
+        // Page 3 - TAS BOT
+
+        tte_set_pos(CHEAT_MENU_X << 3, 5 << 3);
+        tte_write("TAS BOT (VERY EXPERIMENTAL)");
+
+        tte_set_pos(CHEAT_MENU_X << 3, 7 << 3);
+        tte_write(selected == 0 ? "> DISABLED" : "  DISABLED");
+        tte_set_pos(19 << 3, 7 << 3);
+        tte_write(tas_mode == TAS_DISABLED ? "TRUE" : "FALSE");
+
+        tte_set_pos(CHEAT_MENU_X << 3, 9 << 3);
+        tte_write(selected == 1 ? "> RECORD" : "  RECORD");
+        tte_set_pos(19 << 3, 9 << 3);
+        tte_write(tas_mode == TAS_RECORDING ? "TRUE" : "FALSE");
+
+        tte_set_pos(CHEAT_MENU_X << 3, 11 << 3);
+        tte_write(selected == 2 ? "> PLAYBACK" : "  PLAYBACK");
+        tte_set_pos(19 << 3, 11 << 3);
+        tte_write(tas_mode == TAS_PLAYBACK ? "TRUE" : "FALSE");
+
+        tte_set_pos(CHEAT_MENU_X << 3, 13 << 3);
+        tte_write(selected == 3 ? "> SAVE" : "  SAVE");
+
+        tte_set_pos(CHEAT_MENU_X << 3, 14 << 3);
+        tte_write(selected == 4 ? "> LOAD" : "  LOAD");
     }
 
     tte_set_pos(CHEAT_MENU_X << 3, 17 << 3);
@@ -199,7 +226,14 @@ tte_set_special(0x0000);
         break;
 
     if (key_hit(KEY_UP)) {
-        u32 page_items = (cheat_menu_page == 0) ? 4 : 2;
+        u32 page_items;
+
+        if (cheat_menu_page == 0)
+            page_items = 4;
+        else if (cheat_menu_page == 1)
+            page_items = 2;
+        else
+            page_items = 5;
 
         if (selected == 0)
             selected = page_items - 1;
@@ -208,48 +242,76 @@ tte_set_special(0x0000);
     }
 
     if (key_hit(KEY_DOWN)) {
-        u32 page_items = (cheat_menu_page == 0) ? 4 : 2;
+        u32 page_items;
+
+        if (cheat_menu_page == 0)
+            page_items = 4;
+        else if (cheat_menu_page == 1)
+            page_items = 2;
+        else
+            page_items = 5;
 
         selected = (selected + 1) % page_items;
     }
 
     if (key_hit(KEY_A)) {
-    if (cheat_menu_page == 0) {
-        if (selected == 0) {
-            noclip ^= 1;
-        }
-        else if (selected == 1) {
-            hitbox_display ^= 1;
-        }
-        else if (selected == 2) {
-            infinite_jump ^= 1;
-        }
-        else if (selected == 3) {
-            speed_id++;
-            if (speed_id >= SPEED_COUNT)
-                speed_id = SPEED_X05;
+        if (cheat_menu_page == 0) {
+            if (selected == 0) {
+                noclip ^= 1;
+            }
+            else if (selected == 1) {
+                hitbox_display ^= 1;
+            }
+            else if (selected == 2) {
+                infinite_jump ^= 1;
+            }
+            else if (selected == 3) {
+                speed_id++;
+                if (speed_id >= SPEED_COUNT)
+                    speed_id = SPEED_X05;
 
-            set_player_speed();
+                set_player_speed();
+            }
         }
-    }
-    else {
-        if (selected == 0) {
-            cbf_enabled ^= 1;
+        else if (cheat_menu_page == 1) {
+            if (selected == 0) {
+                cbf_enabled ^= 1;
 
-            if (cbf_enabled) {
-                cbf_pending = 0;
-                cbf_frame_hit = 0;
-                cbf_last_raw = KEY_A | KEY_UP;
-                memset(cbf_key_samples, KEY_A | KEY_UP, sizeof(cbf_key_samples));
-                cbf_dma_start();
-            } else {
-                cbf_pending = 0;
-                cbf_frame_hit = 0;
-                cbf_dma_stop();
+                if (cbf_enabled) {
+                    cbf_pending = 0;
+                    cbf_frame_hit = 0;
+                    cbf_last_raw = KEY_A | KEY_UP;
+                    memset(cbf_key_samples, KEY_A | KEY_UP, sizeof(cbf_key_samples));
+                    cbf_dma_start();
+                } else {
+                    cbf_pending = 0;
+                    cbf_frame_hit = 0;
+                    cbf_dma_stop();
+                }
+            }
+        }
+        else {
+            // TAS BOT page
+            if (selected == 0) {
+                tas_stop_recording();
+                tas_stop_playback();
+            }
+            else if (selected == 1) {
+                tas_start_recording();
+                break;
+            }
+            else if (selected == 2) {
+                tas_start_playback();
+                break;
+            }
+            else if (selected == 3) {
+                // SAVE - implemented later
+            }
+            else if (selected == 4) {
+                // LOAD - implemented later
             }
         }
     }
-}
 
         cheat_menu_draw(selected);
         VBlankIntrWait();
@@ -598,7 +660,7 @@ void exit_level() {
 void level_loop() {
     while (1) {
     key_poll();
-
+    tas_update();
 
 
         // Reset next sprite index
